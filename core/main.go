@@ -22,9 +22,10 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func getParams() (mongoUrl string, baseUrl string, sleepTime int64) {
-	mongoUrl = getEnv("MONGODB_URL", "mongodb://127.0.0.1:27017/alphacar")
-	baseUrl = getEnv("BASE_URL", "https://eos.greymass.com")
+func getParams() (mongoUrl string, mongoOpt string, baseUrl string, sleepTime int64) {
+	mongoUrl = getEnv("MONGODB_URL", "mongodb://127.0.0.1:27017")
+	mongoOpt = getEnv("MONGODB_OPT", "?authSource=admin")
+	baseUrl = getEnv("EOSIO_HTTP_URL", "https://eos.greymass.com")
 	val, err := strconv.ParseInt(getEnv("SLEEP_TIME", "5000"), 10, 64)
 	if err == nil {
 		sleepTime = val
@@ -34,9 +35,9 @@ func getParams() (mongoUrl string, baseUrl string, sleepTime int64) {
 	return
 }
 
-func fetchAndUpdate(mongoUrl string) {
+func fetchAndUpdate(mongoUrl string, mongoOpt string) {
 
-	err := mongoWrapper.InitClient(mongoUrl)
+	err := mongoWrapper.InitClient(mongoUrl, "alphacar", mongoOpt)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -60,21 +61,31 @@ func fetchAndUpdate(mongoUrl string) {
 				fmt.Println("json.Marshal failed:", err)
 			}
 			fmt.Println(string(b))
-			status := resp["trx"].(map[string]interface{})["receipt"].(map[string]interface{})["status"]
+			if _, ok := resp["trx"]; ok {
+				txMap1 := resp["trx"].(map[string]interface{})
+				if _, ok := txMap1["receipt"]; ok {
+					txMap2 := txMap1["receipt"].(map[string]interface{})
+					if _, ok := txMap2["status"]; ok {
+						status := txMap2["status"].(string)
 
-			if status == "executed" {
-				blockNum := resp["block_num"].(float64)
-				lastIrreversibleBlock := resp["last_irreversible_block"].(float64)
-				txId := resp["id"].(string)
+						if status == "executed" {
+							blockNum := resp["block_num"].(float64)
+							lastIrreversibleBlock := resp["last_irreversible_block"].(float64)
+							txId := resp["id"].(string)
 
-				if blockNum <= lastIrreversibleBlock {
-					fmt.Println("EXECUTED IRREVERSIBLE")
-					err := mongoWrapper.UpdateTxId(v.Hash, txId)
-					if err != nil {
-						fmt.Println(err.Error())
+							if blockNum <= lastIrreversibleBlock {
+								fmt.Println("EXECUTED IRREVERSIBLE")
+								err := mongoWrapper.UpdateTxId(v.Hash, txId)
+								if err != nil {
+									fmt.Println(err.Error())
+								}
+							}
+						}
+
 					}
 				}
 			}
+			//status := resp["trx"].(map[string]interface{})["receipt"].(map[string]interface{})["status"]
 		} else {
 			fmt.Println(err.Error())
 		}
@@ -92,7 +103,7 @@ func fetchAndUpdate(mongoUrl string) {
 var c chan os.Signal
 var wg sync.WaitGroup
 
-func run(sleepTime int64, mongoUrl string) {
+func run(sleepTime int64, mongoUrl string, mongoOpt string) {
 
 LOOP:
 	for {
@@ -105,7 +116,7 @@ LOOP:
 		}
 
 		fmt.Println("begin fetch... ", time.Now())
-		fetchAndUpdate(mongoUrl)
+		fetchAndUpdate(mongoUrl, mongoOpt)
 
 		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
 
@@ -116,11 +127,11 @@ LOOP:
 
 func main() {
 	fmt.Println("start")
-	mongoUrl, baseUrl, sleepTime := getParams()
+	mongoUrl, mongoOpt, baseUrl, sleepTime := getParams()
 
 	eosWrapper = &EosWrapper{BaseUrl: baseUrl}
 
-	fmt.Println("mongoUrl:", mongoUrl)
+	fmt.Println("baseUrl:", baseUrl)
 
 	mongoWrapper = &MongoWrapper{}
 
@@ -128,7 +139,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	wg.Add(1)
-	go run(sleepTime, mongoUrl)
+	go run(sleepTime, mongoUrl, mongoOpt)
 
 	wg.Wait()
 

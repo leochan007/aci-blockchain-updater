@@ -5,6 +5,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -14,10 +15,17 @@ type MongoWrapper struct {
 	collection *mongo.Collection
 }
 
-func (instance *MongoWrapper) InitClient(mongoUrl string) (err error) {
-	instance.ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
-	instance.client, err = mongo.Connect(instance.ctx, mongoUrl)
-	instance.collection = instance.client.Database("alphacar").Collection("credit_inquiry")
+func (instance *MongoWrapper) InitClient(mongoUrl string, dbName string, mongoOpt string) (err error) {
+	instance.ctx, _ = context.WithTimeout(context.Background(), 10 * time.Second)
+	tmpMongoUrl := mongoUrl
+	if !strings.HasSuffix(mongoUrl, "/") {
+		tmpMongoUrl += "/"
+	}
+	url := tmpMongoUrl + dbName + mongoOpt
+	instance.client, err = mongo.Connect(instance.ctx, url)
+	if err == nil {
+		instance.collection = instance.client.Database(dbName).Collection("credit_inquiry")
+	}
 	return
 }
 
