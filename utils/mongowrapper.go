@@ -11,23 +11,25 @@ import (
 type MongoWrapper struct {
 	client *mongo.Client
 	ctx    context.Context
+	collection *mongo.Collection
 }
 
 func (instance *MongoWrapper) InitClient(mongoUrl string) (err error) {
 	instance.ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
 	instance.client, err = mongo.Connect(instance.ctx, mongoUrl)
-
-	//fmt.Println("client", instance.client)
+	instance.collection = instance.client.Database("alphacar").Collection("credit_inquiry")
 	return
 }
 
 func (instance *MongoWrapper) GetProcessedCreditInquiries(status string) (results []QueryResult, errInfo error) {
 	if instance.client != nil {
 		filter := bson.M{"status": status}
-		collection := instance.client.Database("alphacar").Collection("credit_inquiry")
-		cur, err := collection.Find(instance.ctx, filter)
+		cur, err := instance.collection.Find(instance.ctx, filter)
 		if err != nil {
 			log.Fatal(err)
+			results = nil
+			errInfo = err
+			return
 		}
 		for cur.Next(instance.ctx) {
 			var result bson.M
@@ -49,6 +51,25 @@ func (instance *MongoWrapper) GetProcessedCreditInquiries(status string) (result
 			errInfo = err
 			return
 		}
+	}
+	errInfo = nil
+	return
+}
+
+func (instance *MongoWrapper) UpdateTxId(hash string, txId string) (errInfo error) {
+	if instance.client != nil {
+		filter := bson.M{"hash": hash}
+		update := bson.D{
+			{"$set", bson.D{
+				{"txId", txId},
+				{"status", "confirmed"},
+			}},
+		}
+		_, err := instance.collection.UpdateOne(instance.ctx, filter, update)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 	errInfo = nil
 	return

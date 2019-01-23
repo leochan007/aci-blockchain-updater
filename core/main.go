@@ -53,9 +53,14 @@ func main() {
 			if status == "executed" {
 				blockNum := resp["block_num"].(float64)
 				lastIrreversibleBlock := resp["last_irreversible_block"].(float64)
+				txId := resp["id"].(string)
 
 				if blockNum <= lastIrreversibleBlock {
 					fmt.Println("EXECUTED IRREVERSIBLE")
+					err := mongoWrapper.UpdateTxId(v.Hash, txId)
+					if err != nil {
+						fmt.Println(err.Error())
+					}
 				}
 			}
 		} else {
