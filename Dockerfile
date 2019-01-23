@@ -12,8 +12,10 @@ COPY utils /go/src/github.com/leochan007/aci-blockchain-updater/utils
 
 WORKDIR /go/src/github.com/leochan007/aci-blockchain-updater/
 
-RUN go build -o /root/updater core/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /root/updater core/main.go
 
 RUN rm -rf /go/src/github.com/leochan007/aci-blockchain-updater/
 
 WORKDIR /root
+
+CMD /root/updater
