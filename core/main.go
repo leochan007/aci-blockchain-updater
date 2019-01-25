@@ -36,7 +36,7 @@ func getParams() (mongoUrl string, mongoOpt string, baseUrl string, sleepTime in
 }
 
 func fetchAndUpdate(mongoUrl string, mongoOpt string) {
-
+	
 	err := mongoWrapper.InitClient(mongoUrl, "alphacar", mongoOpt)
 
 	if err != nil {
