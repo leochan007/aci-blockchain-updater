@@ -105,6 +105,8 @@ var wg sync.WaitGroup
 
 func run(sleepTime int64, mongoUrl string, mongoOpt string) {
 
+	tickTimer := time.NewTicker(time.Duration(sleepTime) * time.Millisecond)
+
 LOOP:
 	for {
 		select {
@@ -112,13 +114,11 @@ LOOP:
 			fmt.Println()
 			fmt.Println("run get:", s)
 			break LOOP
+		case <-tickTimer.C:
+			fmt.Println("with TICKER begin fetch... ", time.Now())
+			fetchAndUpdate(mongoUrl, mongoOpt)
 		default:
 		}
-
-		fmt.Println("begin fetch... ", time.Now())
-		fetchAndUpdate(mongoUrl, mongoOpt)
-
-		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
 
 	}
 	wg.Done()
@@ -139,6 +139,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	wg.Add(1)
+
 	go run(sleepTime, mongoUrl, mongoOpt)
 
 	wg.Wait()
