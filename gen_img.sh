@@ -25,7 +25,7 @@ docker rmi $img_name
 
 docker rmi $PREFIX/$img_name:v1
 
-go build core/main.go -o updater
+ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o updater core/main.go
 
 docker build --no-cache -t $img_name .
 
