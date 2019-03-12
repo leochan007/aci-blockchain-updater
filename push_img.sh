@@ -2,19 +2,14 @@
 
 set -x
 
-FLAG=testnet_stg
+source module_def.sh
 
 if [ -n "$1" ]; then
   FLAG=$1
 fi
 
-img_name=aci-blockchain-updater
-
 if [ "testnet" != "$FLAG" ]; then
   img_name=$img_name-stg
 fi
 
-VER=`git rev-parse HEAD`
-echo 'VER:'$VER
-
-docker push nexus.alphacario.com:8089/$img_name:v1
+docker push $PREFIX/$img_name:v1
