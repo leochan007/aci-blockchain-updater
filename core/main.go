@@ -35,9 +35,9 @@ func getParams() (mongoUrl string, mongoOpt string, baseUrl string, sleepTime in
 	return
 }
 
-func fetchAndUpdate(mongoUrl string, mongoOpt string) {
+func fetchAndUpdate(mongoUrl string, mongoOpt string, collection string) {
 	
-	err := mongoWrapper.InitClient(mongoUrl, "alphacar", mongoOpt)
+	err := mongoWrapper.InitClient(mongoUrl, "alphacar", collection, mongoOpt)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -103,7 +103,7 @@ func fetchAndUpdate(mongoUrl string, mongoOpt string) {
 var c chan os.Signal
 var wg sync.WaitGroup
 
-func run(sleepTime int64, mongoUrl string, mongoOpt string) {
+func run(sleepTime int64, mongoUrl string, mongoOpt string, collectionName string) {
 
 	tickTimer := time.NewTicker(time.Duration(sleepTime) * time.Millisecond)
 
@@ -116,7 +116,7 @@ LOOP:
 			break LOOP
 		case <-tickTimer.C:
 			fmt.Println("with TICKER begin fetch... ", time.Now())
-			fetchAndUpdate(mongoUrl, mongoOpt)
+			fetchAndUpdate(mongoUrl, mongoOpt, collectionName)
 		default:
 		}
 
@@ -139,8 +139,10 @@ func main() {
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	wg.Add(1)
+	go run(sleepTime, mongoUrl, mongoOpt, "credit-inquiry")
 
-	go run(sleepTime, mongoUrl, mongoOpt)
+	wg.Add(1)
+	go run(sleepTime, mongoUrl, mongoOpt, "reward-record")
 
 	wg.Wait()
 

@@ -15,7 +15,7 @@ type MongoWrapper struct {
 	collection *mongo.Collection
 }
 
-func (instance *MongoWrapper) InitClient(mongoUrl string, dbName string, mongoOpt string) (err error) {
+func (instance *MongoWrapper) InitClient(mongoUrl string, dbName string, collectionName string, mongoOpt string) (err error) {
 	instance.ctx, _ = context.WithTimeout(context.Background(), 10 * time.Second)
 	tmpMongoUrl := mongoUrl
 	if !strings.HasSuffix(mongoUrl, "/") {
@@ -24,7 +24,7 @@ func (instance *MongoWrapper) InitClient(mongoUrl string, dbName string, mongoOp
 	url := tmpMongoUrl + dbName + mongoOpt
 	instance.client, err = mongo.Connect(instance.ctx, url)
 	if err == nil {
-		instance.collection = instance.client.Database(dbName).Collection("credit_inquiry")
+		instance.collection = instance.client.Database(dbName).Collection(collectionName)
 	}
 	return
 }
