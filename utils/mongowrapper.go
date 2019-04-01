@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"log"
@@ -29,7 +30,7 @@ func (instance *MongoWrapper) InitClient(mongoUrl string, dbName string, collect
 	return
 }
 
-func (instance *MongoWrapper) GetProcessedCreditInquiries(status string) (results []QueryResult, errInfo error) {
+func (instance *MongoWrapper) GetProcessedDatas(status string) (results []QueryResult, errInfo error) {
 	if instance.client != nil {
 		filter := bson.M{"status": status}
 		cur, err := instance.collection.Find(instance.ctx, filter)
@@ -60,6 +61,8 @@ func (instance *MongoWrapper) GetProcessedCreditInquiries(status string) (result
 			return
 		}
 	}
+
+	fmt.Println("data length=", len(results))
 	errInfo = nil
 	return
 }

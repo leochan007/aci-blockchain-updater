@@ -17,7 +17,7 @@ func (instance *EosWrapper) post(url string, reader *bytes.Reader) (result map[s
 		result = nil
 		return
 	}
-	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	client := http.Client{}
 	resp := &http.Response{}
 	resp, err = client.Do(request)

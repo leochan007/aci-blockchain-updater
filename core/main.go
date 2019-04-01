@@ -46,7 +46,7 @@ func fetchAndUpdate(mongoWrapper *MongoWrapper, mongoUrl string, mongoOpt string
 		return
 	}
 
-	result, err := mongoWrapper.GetProcessedCreditInquiries("processed")
+	result, err := mongoWrapper.GetProcessedDatas("processed")
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -139,14 +139,18 @@ func main() {
 
 	rrMongoWrapper = &MongoWrapper{}
 
+	fmt.Println("ciMongoWrapper:", ciMongoWrapper)
+
+	fmt.Println("rrMongoWrapper:", rrMongoWrapper)
+
 	c = make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	wg.Add(1)
-	go run(ciMongoWrapper, sleepTime, mongoUrl, mongoOpt, "credit-inquiry")
+	go run(ciMongoWrapper, sleepTime, mongoUrl, mongoOpt, "credit_inquiry")
 
 	wg.Add(1)
-	go run(rrMongoWrapper, sleepTime, mongoUrl, mongoOpt, "reward-record")
+	go run(rrMongoWrapper, sleepTime, mongoUrl, mongoOpt, "reward_record")
 
 	wg.Wait()
 
