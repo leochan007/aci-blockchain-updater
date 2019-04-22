@@ -15,8 +15,6 @@ var eosWrapper *EosWrapper = nil
 
 var ciMongoWrapper *MongoWrapper = nil
 
-var rrMongoWrapper *MongoWrapper = nil
-
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
@@ -105,9 +103,10 @@ func fetchAndUpdate(mongoWrapper *MongoWrapper, mongoUrl string, mongoOpt string
 var c chan os.Signal
 var wg sync.WaitGroup
 
-func run(mongoWrapper *MongoWrapper, sleepTime int64, mongoUrl string, mongoOpt string, collectionName string) {
+func run(mongoWrapper *MongoWrapper, sleepTime int64, mongoUrl string, mongoOpt string) {
 
 	tickTimer := time.NewTicker(time.Duration(sleepTime) * time.Millisecond)
+	defer tickTimer.Stop()
 
 LOOP:
 	for {
@@ -118,11 +117,11 @@ LOOP:
 			break LOOP
 		case <-tickTimer.C:
 			fmt.Println("with TICKER begin fetch... ", time.Now())
-			fetchAndUpdate(mongoWrapper, mongoUrl, mongoOpt, collectionName)
-		default:
+			fetchAndUpdate(mongoWrapper, mongoUrl, mongoOpt, "credit_inquiry")
+			fetchAndUpdate(mongoWrapper, mongoUrl, mongoOpt, "reward_record")
 		}
-
 	}
+
 	wg.Done()
 
 }
@@ -137,20 +136,13 @@ func main() {
 
 	ciMongoWrapper = &MongoWrapper{}
 
-	rrMongoWrapper = &MongoWrapper{}
-
 	fmt.Println("ciMongoWrapper:", ciMongoWrapper)
-
-	fmt.Println("rrMongoWrapper:", rrMongoWrapper)
 
 	c = make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
 	wg.Add(1)
-	go run(ciMongoWrapper, sleepTime, mongoUrl, mongoOpt, "credit_inquiry")
-
-	wg.Add(1)
-	go run(rrMongoWrapper, sleepTime, mongoUrl, mongoOpt, "reward_record")
+	go run(ciMongoWrapper, sleepTime, mongoUrl, mongoOpt)
 
 	wg.Wait()
 
