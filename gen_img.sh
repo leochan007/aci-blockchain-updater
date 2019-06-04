@@ -8,7 +8,7 @@ if [ -n "$1" ]; then
   FLAG=$1
 fi
 
-if [ "testnet" != "$FLAG" ]; then
+if [ xstg = x"$2" ]; then
   img_name=$img_name-stg
 fi
 
